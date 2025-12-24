@@ -33,6 +33,10 @@ AGENT_REGISTRY = {
     "BaseAgentCrypto": {
         "module": "agent.base_agent_crypto.base_agent_crypto",
         "class": "BaseAgentCrypto"
+    },
+    "BaseAgentForex": {
+        "module": "agent.base_agent_forex.base_agent_forex",
+        "class": "BaseAgentForex"
     }
 }
 
@@ -130,9 +134,13 @@ async def main(config_path=None):
         market = "cn"
     elif agent_type == "BaseAgentCrypto":
         market = "crypto"
+    elif agent_type == "BaseAgentForex":
+        market = "forex"
 
     if market == "crypto":
         print(f"🌍 Market type: Cryptocurrency (24/7 trading)")
+    elif market == "forex":
+        print(f"🌍 Market type: Forex (24/5 trading)")
     elif market == "cn":
         print(f"🌍 Market type: A-shares (China)")
     else:
@@ -239,9 +247,11 @@ async def main(config_path=None):
         print(f"✅ Runtime config initialized: SIGNATURE={signature}, MARKET={market}")
 
         # Select symbols based on agent type and market
-        # Crypto agents don't use stock_symbols parameter
+        # Crypto and Forex agents have different parameter requirements
         if agent_type == "BaseAgentCrypto":
             stock_symbols = None  # Crypto agent uses its own crypto_symbols
+        elif agent_type == "BaseAgentForex":
+            stock_symbols = None  # Forex agent uses forex_pairs from config
         elif agent_type == "BaseAgentAStock" or agent_type == "BaseAgentAStock_Hour":
             stock_symbols = None  # Let BaseAgentAStock use its default SSE 50
         elif market == "cn":
@@ -253,11 +263,27 @@ async def main(config_path=None):
 
         try:
             # Dynamically create Agent instance
-            # Crypto agents have different parameter requirements
+            # Crypto and Forex agents have different parameter requirements
             if agent_type == "BaseAgentCrypto":
                 agent = AgentClass(
                     signature=signature,
                     basemodel=basemodel,
+                    log_path=log_path,
+                    max_steps=max_steps,
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                    initial_cash=initial_cash,
+                    init_date=INIT_DATE,
+                    openai_base_url=openai_base_url,
+                    openai_api_key=openai_api_key
+                )
+            elif agent_type == "BaseAgentForex":
+                # Get forex pairs from config
+                forex_pairs = agent_config.get("forex_pairs", None)
+                agent = AgentClass(
+                    signature=signature,
+                    basemodel=basemodel,
+                    forex_pairs=forex_pairs,
                     log_path=log_path,
                     max_steps=max_steps,
                     max_retries=max_retries,

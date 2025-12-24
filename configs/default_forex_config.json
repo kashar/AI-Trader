@@ -1,0 +1,111 @@
+{
+  "agent_type": "BaseAgentForex",
+  "market": "forex",
+  "date_range": {
+    "init_date": "2025-10-01",
+    "end_date": "2025-10-21"
+  },
+  "models": [
+    {
+      "name": "llama-3.3-70b-versatile",
+      "basemodel": "llama-3.3-70b-versatile",
+      "signature": "llama-3.3-70b-forex",
+      "enabled": true,
+      "openai_base_url": "https://api.groq.com/openai/v1",
+      "openai_api_key": "env:GROQ_API_KEY"
+    },
+    {
+      "name": "grok-beta",
+      "basemodel": "grok-beta",
+      "signature": "grok-beta-forex",
+      "enabled": false,
+      "openai_base_url": "https://api.x.ai/v1",
+      "openai_api_key": "env:XAI_API_KEY"
+    },
+    {
+      "name": "gemini-2.0-flash-exp",
+      "basemodel": "gemini-2.0-flash-exp",
+      "signature": "gemini-2.0-flash-forex",
+      "enabled": false,
+      "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+      "openai_api_key": "env:GOOGLE_API_KEY"
+    },
+    {
+      "name": "gemini-1.5-flash",
+      "basemodel": "gemini-1.5-flash",
+      "signature": "gemini-1.5-flash-forex",
+      "enabled": false,
+      "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+      "openai_api_key": "env:GOOGLE_API_KEY"
+    },
+    {
+      "name": "llama-3.1-70b-versatile",
+      "basemodel": "llama-3.1-70b-versatile",
+      "signature": "llama-3.1-70b-forex",
+      "enabled": false,
+      "openai_base_url": "https://api.groq.com/openai/v1",
+      "openai_api_key": "env:GROQ_API_KEY"
+    },
+    {
+      "name": "mixtral-8x7b-32768",
+      "basemodel": "mixtral-8x7b-32768",
+      "signature": "mixtral-8x7b-forex",
+      "enabled": false,
+      "openai_base_url": "https://api.groq.com/openai/v1",
+      "openai_api_key": "env:GROQ_API_KEY"
+    },
+    {
+      "name": "deepseek-chat",
+      "basemodel": "deepseek-chat",
+      "signature": "deepseek-chat-forex",
+      "enabled": false,
+      "openai_base_url": "https://api.deepseek.com",
+      "openai_api_key": "env:DEEPSEEK_API_KEY"
+    },
+    {
+      "name": "qwen-turbo",
+      "basemodel": "qwen-turbo",
+      "signature": "qwen-turbo-forex",
+      "enabled": false,
+      "openai_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "openai_api_key": "env:DASHSCOPE_API_KEY"
+    },
+    {
+      "name": "gpt-3.5-turbo",
+      "basemodel": "gpt-3.5-turbo",
+      "signature": "gpt-3.5-turbo-forex",
+      "enabled": false
+    },
+    {
+      "name": "gpt-4o",
+      "basemodel": "gpt-4o",
+      "signature": "gpt-4o-forex",
+      "enabled": false
+    },
+    {
+      "name": "claude-3.7-sonnet",
+      "basemodel": "anthropic/claude-3.7-sonnet",
+      "signature": "claude-3.7-sonnet-forex",
+      "enabled": false,
+      "openai_base_url": "Optional: YOUR_OPENAI_BASE_URL,you can write them in .env file",
+      "openai_api_key": "Optional: YOUR_OPENAI_API_KEY,you can write them in .env file"
+    }
+  ],
+  "agent_config": {
+    "max_steps": 30,
+    "max_retries": 3,
+    "base_delay": 1.0,
+    "initial_cash": 10000.0,
+    "verbose": true,
+    "forex_pairs": [
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "USDCHF",
+      "AUDUSD"
+    ]
+  },
+  "log_config": {
+    "log_path": "./data/agent_data_forex"
+  }
+}
