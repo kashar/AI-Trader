@@ -74,11 +74,11 @@ def api_call_with_retry(api_func, pro_api_instance, max_retries: int = 3, retry_
                 requests.exceptions.ConnectionError) as e:
             if attempt < max_retries:
                 wait_time = retry_delay * attempt
-                print(f"⚠️ 网络超时错误 (尝试 {attempt}/{max_retries})，等待 {wait_time} 秒后重试...")
-                print(f"错误详情: {str(e)}")
+                print(f"⚠️ Network timeout error (attempt {attempt}/{max_retries}), waiting {wait_time} seconds before retry...")
+                print(f"Error details: {str(e)}")
                 time.sleep(wait_time)
             else:
-                print(f"❌ 所有重试尝试均失败")
+                print(f"❌ All retry attempts failed")
                 raise
         except Exception as e:
             # Check if it's a timeout-related error in the error message
@@ -86,24 +86,24 @@ def api_call_with_retry(api_func, pro_api_instance, max_retries: int = 3, retry_
             if 'timeout' in error_str or 'timed out' in error_str or 'read timeout' in error_str:
                 if attempt < max_retries:
                     wait_time = retry_delay * attempt
-                    print(f"⚠️ 网络超时错误 (尝试 {attempt}/{max_retries})，等待 {wait_time} 秒后重试...")
-                    print(f"错误详情: {str(e)}")
+                    print(f"⚠️ Network timeout error (attempt {attempt}/{max_retries}), waiting {wait_time} seconds before retry...")
+                    print(f"Error details: {str(e)}")
                     time.sleep(wait_time)
                 else:
-                    print(f"❌ 所有重试尝试均失败")
+                    print(f"❌ All retry attempts failed")
                     raise
             else:
                 # For other errors, also retry
                 if attempt < max_retries:
                     wait_time = retry_delay * attempt
-                    print(f"⚠️ API 调用错误 (尝试 {attempt}/{max_retries})，等待 {wait_time} 秒后重试...")
-                    print(f"错误详情: {str(e)}")
+                    print(f"⚠️ API call error (attempt {attempt}/{max_retries}), waiting {wait_time} seconds before retry...")
+                    print(f"Error details: {str(e)}")
                     time.sleep(wait_time)
                 else:
-                    print(f"❌ 所有重试尝试均失败")
+                    print(f"❌ All retry attempts failed")
                     raise
     
-    raise Exception("所有重试尝试均失败")
+    raise Exception("All retry attempts failed")
 
 
 def get_daily_price_a_stock(
@@ -142,7 +142,7 @@ def get_daily_price_a_stock(
     daily_end_date = datetime.now().strftime("%Y%m%d")
 
     try:
-        print(f"正在获取指数成分股数据: {index_code} ({index_start_date} - {index_end_date})")
+        print(f"Fetching index constituent data: {index_code} ({index_start_date} - {index_end_date})")
         df = api_call_with_retry(
             pro.index_weight,
             pro_api_instance=pro,
@@ -184,7 +184,7 @@ def get_daily_price_a_stock(
             batch_end_str = current_end.strftime("%Y%m%d")
             batch_num += 1
 
-            print(f"正在获取批次 {batch_num}/{total_batches}: {batch_start_str} - {batch_end_str}")
+            print(f"Fetching batch {batch_num}/{total_batches}: {batch_start_str} - {batch_end_str}")
             
             df_batch = api_call_with_retry(
                 pro.daily,
@@ -197,7 +197,7 @@ def get_daily_price_a_stock(
 
             if not df_batch.empty:
                 all_data.append(df_batch)
-                print(f"✅ 批次 {batch_num} 获取成功，获得 {len(df_batch)} 条记录")
+                print(f"✅ Batch {batch_num} success, got {len(df_batch)} records")
 
             # Add delay between batches to avoid rate limiting
             if current_start < end_dt:
@@ -331,7 +331,7 @@ def get_index_daily_data(
         end_date = datetime.now().strftime("%Y%m%d")
 
     try:
-        print(f"正在获取指数日线数据: {index_code} ({start_date} - {end_date})")
+        print(f"Fetching index daily data: {index_code} ({start_date} - {end_date})")
         df = api_call_with_retry(
             pro.index_daily,
             pro_api_instance=pro,

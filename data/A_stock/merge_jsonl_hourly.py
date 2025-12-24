@@ -1,16 +1,16 @@
 """
-A股小时级数据转JSONL格式脚本
+A-shares hourly data to JSONL format script
 
-功能：
-1. 从 A_stock_hourly.csv 读取60分钟K线数据
-2. 转换为与 Alpha Vantage 格式兼容的 JSONL 格式
-3. 每只股票一行JSON，包含 Meta Data 和 Time Series (60min)
+Function:
+1. Read 60-minute K-line data from A_stock_hourly.csv
+2. Convert to JSONL format compatible with Alpha Vantage
+3. One line per stock JSON, containing Meta Data and Time Series (60min)
 
-依赖：
-- pandas: 数据处理库
+Dependencies:
+- pandas: Data processing library
 
-作者: AI-Trader
-日期: 2025-11-16
+Author: AI-Trader
+Date: 2025-11-16
 """
 
 import json

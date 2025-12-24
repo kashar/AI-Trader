@@ -1,5 +1,5 @@
 """
-A股专用交易Agent模块
+A-share specific trading Agent module
 Chinese A-shares specific trading agent module
 """
 

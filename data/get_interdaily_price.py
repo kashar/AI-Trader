@@ -119,16 +119,16 @@ def update_json(data: dict, SYMBOL: str):
             with open(file_path, 'r', encoding='utf-8') as f:
                 old_data = json.load(f)
             
-            # 合并新旧的"Time Series (60min)"，新data优先（相同时间戳用新数据覆盖）
+            # Merge new and old "Time Series (60min)", new data takes precedence (same timestamp covered by new data)
             old_ts = old_data.get("Time Series (60min)", {})
             new_ts = data.get("Time Series (60min)", {})
-            merged_ts = {**old_ts, **new_ts}  # 新数据覆盖旧数据中相同的时间戳
+            merged_ts = {**old_ts, **new_ts}  # New data overwrites old data with same timestamp
             
-            # 创建新的数据字典，避免直接修改传入的data
+            # Create new data dictionary to avoid modifying passed data directly
             merged_data = data.copy()
             merged_data["Time Series (60min)"] = merged_ts
             
-            # 如果新数据没有Meta Data，保留旧的Meta Data
+            # If new data has no Meta Data, keep old Meta Data
             if "Meta Data" not in merged_data and "Meta Data" in old_data:
                 merged_data["Meta Data"] = old_data["Meta Data"]
             
@@ -138,7 +138,7 @@ def update_json(data: dict, SYMBOL: str):
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
         
-        # QQQ 特殊处理：同时保存到另一个文件
+        # Special handling for QQQ: also save to another file
         if SYMBOL == "QQQ":
             file_path_qqq = f'./Adaily_prices_{SYMBOL}.json'
             if os.path.exists(file_path_qqq):

@@ -71,34 +71,34 @@ def filter_data(data: dict,after_date: str):
     return data
 
 def merge_data(existing_data: dict, new_data: dict):
-    """合并数据：保留已存在的日期，只添加新日期"""
+    """Merge data: Keep existing dates, only add new dates"""
     if existing_data is None or "Time Series (Daily)" not in existing_data:
         return new_data
     
     existing_dates = existing_data["Time Series (Daily)"]
     new_dates = new_data["Time Series (Daily)"]
     
-    # 合并：保留已存在的日期，添加新日期
+    # Merge: Keep existing dates, add new dates
     merged_dates = existing_dates.copy()
     for date in new_dates:
         if date not in merged_dates:
             merged_dates[date] = new_dates[date]
     
-    # 按日期排序（降序，最新的在前）
+    # Sort by date (descending, latest first)
     sorted_dates = OrderedDict(sorted(merged_dates.items(), key=lambda x: x[0], reverse=True))
     
-    # 更新数据：保留 existing_data 的 Meta Data，但更新 Last Refreshed
+    # Update data: Keep Meta Data from existing_data, but update Last Refreshed
     merged_data = existing_data.copy()
     merged_data["Time Series (Daily)"] = sorted_dates
     
-    # 更新 Meta Data 中的 Last Refreshed（使用最新的日期）
+    # Update Last Refreshed in Meta Data (use latest date)
     if sorted_dates:
         merged_data["Meta Data"]["3. Last Refreshed"] = list(sorted_dates.keys())[0]
     
     return merged_data
 
 def load_existing_data(filepath: str):
-    """加载已存在的数据文件"""
+    """Load existing data file"""
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
@@ -125,7 +125,7 @@ def get_daily_price(SYMBOL: str):
     if OUTPUTSIZE == "full":
         data = filter_data(data, "2025-10-01")
     
-    # 合并数据：保留已存在的日期，只添加新日期
+    # Merge data: Keep existing dates, only add new dates
     output_file = f"./A_stock_data/daily_prices_{SYMBOL}.json"
     existing_data = load_existing_data(output_file)
     data = merge_data(existing_data, data)
@@ -134,7 +134,7 @@ def get_daily_price(SYMBOL: str):
         json.dump(data, f, ensure_ascii=False, indent=4)
     
     if SYMBOL == "000016.SHH":
-        # 对于 000016.SHH，也需要合并 Adaily_prices 文件
+        # For 000016.SHH, also need to merge Adaily_prices file
         adaily_file = f"./A_stock_data/Adaily_prices_{SYMBOL}.json"
         existing_adaily_data = load_existing_data(adaily_file)
         adaily_data = merge_data(existing_adaily_data, data)
@@ -142,7 +142,7 @@ def get_daily_price(SYMBOL: str):
         with open(adaily_file, "w", encoding="utf-8") as f:
             json.dump(adaily_data, f, ensure_ascii=False, indent=4)
         
-        # 对于 index_daily_sse_50.json，也需要合并
+        # For index_daily_sse_50.json, also need to merge
         index_file = "./A_stock_data/index_daily_sse_50.json"
         existing_index_data = load_existing_data(index_file)
         index_data = data.copy()

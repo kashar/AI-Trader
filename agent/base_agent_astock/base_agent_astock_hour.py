@@ -1,5 +1,5 @@
 """
-BaseAgentAStock_Hour class - A股小时级交易Agent
+BaseAgentAStock_Hour class - A-shares hourly trading agent
 A-shares hourly trading agent
 
 Inherits from BaseAgentAStock and overrides methods for hourly trading:
@@ -41,7 +41,7 @@ load_dotenv()
 
 class BaseAgentAStock_Hour(BaseAgentAStock):
     """
-    A股小时级交易Agent
+    A-shares hourly trading agent
     Chinese A-shares hourly trading agent
 
     This class extends BaseAgentAStock to support hourly-level trading for Chinese A-shares market.
@@ -67,7 +67,7 @@ class BaseAgentAStock_Hour(BaseAgentAStock):
     Inherited Features (from BaseAgentAStock):
     - DeepSeekChatOpenAI wrapper for API compatibility
     - A-shares specific system prompts with trading rules
-    - SSE 50 (上证50) stock symbols as default
+    - SSE 50 (Shanghai Stock Exchange 50) stock symbols as default
     - CNY (¥) currency display
     - Market hardcoded to "cn"
 
@@ -275,7 +275,7 @@ class BaseAgentAStock_Hour(BaseAgentAStock):
         )
 
         # Initial user query in Chinese
-        user_query = [{"role": "user", "content": f"请分析并更新今日（{today_date}）的持仓。"}]
+        user_query = [{"role": "user", "content": f"Please analyze and update today's ({today_date}) positions."}]
         message = user_query.copy()
 
         # Log initial message
@@ -430,10 +430,10 @@ class BaseAgentAStock_Hour(BaseAgentAStock):
 
         # Print warning if incomplete
         if not result["is_complete"]:
-            print(f"⚠️  警告: {date} 数据不完整")
-            print(f"   预期时间点: {len(expected_times)} 个 {sorted(expected_times)}")
-            print(f"   实际时间点: {len(found_times)} 个 {sorted(found_times)}")
-            print(f"   缺失时间点: {sorted(missing_times)}")
+            print(f"⚠️  Warning: {date} data incomplete")
+            print(f"   Expected time points: {len(expected_times)} {sorted(expected_times)}")
+            print(f"   Found time points: {len(found_times)} {sorted(found_times)}")
+            print(f"   Missing time points: {sorted(missing_times)}")
 
         return result
 
@@ -510,33 +510,33 @@ class BaseAgentAStock_Hour(BaseAgentAStock):
         # Print summary if verbose
         if verbose:
             print("=" * 60)
-            print("交易时间验证结果")
+            print("Trading Time Validation Results")
             print("=" * 60)
-            print(f"总时间点数: {result['total_times']}")
-            print(f"有效时间点: {result['valid_times']}")
-            print(f"无效时间点: {result['invalid_times']}")
+            print(f"Total time points: {result['total_times']}")
+            print(f"Valid time points: {result['valid_times']}")
+            print(f"Invalid time points: {result['invalid_times']}")
 
             if result['invalid_times'] > 0:
-                print(f"\n⚠️  无效时间点列表:")
+                print(f"\n⚠️  Invalid time point list:")
                 for ts in result['invalid_list']:
                     print(f"   - {ts}")
 
-            print(f"\n交易日数: {result['num_trading_days']}")
-            print(f"日期范围: {result['unique_dates'][0] if result['unique_dates'] else 'N/A'} 至 "
+            print(f"\nTrading days: {result['num_trading_days']}")
+            print(f"Date range: {result['unique_dates'][0] if result['unique_dates'] else 'N/A'} to "
                   f"{result['unique_dates'][-1] if result['unique_dates'] else 'N/A'}")
 
             # Summary of daily completeness
             complete_days = sum(1 for check in daily_checks.values() if check['is_complete'])
             incomplete_days = len(daily_checks) - complete_days
 
-            print(f"\n完整交易日: {complete_days}/{len(daily_checks)}")
+            print(f"\nComplete trading days: {complete_days}/{len(daily_checks)}")
             if incomplete_days > 0:
-                print(f"不完整交易日: {incomplete_days}")
+                print(f"Incomplete trading days: {incomplete_days}")
 
             if has_duplicates:
-                print("\n⚠️  检测到重复时间点")
+                print("\n⚠️  Duplicate time points detected")
 
-            print(f"\n总体验证: {'✅ 通过' if result['is_valid'] else '❌ 失败'}")
+            print(f"\nOverall validation: {'✅ Passed' if result['is_valid'] else '❌ Failed'}")
             print("=" * 60)
 
         return result

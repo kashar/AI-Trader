@@ -1,5 +1,5 @@
 """
-BaseAgentAStock class - A股专用交易Agent基类
+BaseAgentAStock class - A-shares specific trading agent base class
 Chinese A-shares specific trading agent base class
 Encapsulates core functionality for A-shares trading including MCP tool management, AI agent creation, and trading execution
 """
@@ -94,7 +94,7 @@ load_dotenv()
 
 class BaseAgentAStock:
     """
-    A股专用交易Agent基类
+    A-shares specific trading agent base class
     Chinese A-shares specific trading agent base class
 
     Main functionalities:
@@ -171,9 +171,9 @@ class BaseAgentAStock:
         base_delay: float = 0.5,
         openai_base_url: Optional[str] = None,
         openai_api_key: Optional[str] = None,
-        initial_cash: float = 100000.0,  # 默认10万人民币
+        initial_cash: float = 100000.0,  # Default 100k RMB
         init_date: str = "2025-10-09",
-        market: str = "cn",  # 接受但忽略此参数，始终使用"cn"
+        market: str = "cn",  # Accepts but ignores this parameter, always uses "cn"
     ):
         """
         Initialize BaseAgentAStock
@@ -195,9 +195,9 @@ class BaseAgentAStock:
         """
         self.signature = signature
         self.basemodel = basemodel
-        self.market = "cn"  # 硬编码为A股市场
+        self.market = "cn"  # Hardcoded for A-shares market
 
-        # 默认使用上证50成分股
+        # Default to SSE 50 component stocks
         if stock_symbols is None:
             self.stock_symbols = self.DEFAULT_SSE50_SYMBOLS
         else:
@@ -212,7 +212,7 @@ class BaseAgentAStock:
         # Set MCP configuration
         self.mcp_config = mcp_config or self._get_default_mcp_config()
 
-        # Set log path - A股专用路径
+        # Set log path - A-shares specific path
         self.base_log_path = log_path or "./data/agent_data_astock"
 
         # Set OpenAI configuration
@@ -350,7 +350,7 @@ class BaseAgentAStock:
         # Set up logging
         log_file = self._setup_logging(today_date)
 
-        # Update system prompt - 使用A股专用提示词
+        # Update system prompt - Use A-shares specific prompt
         self.agent = create_agent(
             self.model,
             tools=self.tools,
@@ -358,7 +358,7 @@ class BaseAgentAStock:
         )
 
         # Initial user query
-        user_query = [{"role": "user", "content": f"请分析并更新今日（{today_date}）的持仓。"}]
+        user_query = [{"role": "user", "content": f"Please analyze and update today's ({today_date}) positions."}]
         message = user_query.copy()
 
         # Log initial message

@@ -166,7 +166,7 @@ class BaseAgent_Hour(BaseAgent):
                     continue
                 try:
                     doc = json.loads(line)
-                    # 查找所有以 "Time Series" 开头的键
+                    # Find all keys starting with "Time Series"
                     for key, value in doc.items():
                         if key.startswith("Time Series"):
                             if isinstance(value, dict):

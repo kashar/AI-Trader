@@ -1,6 +1,5 @@
 """
-A股专用Agent提示词模块
-Chinese A-shares specific agent prompt module
+A-share specific Agent prompt module
 """
 
 import os
@@ -28,113 +27,113 @@ from tools.price_tools import (all_sse_50_symbols,
 STOP_SIGNAL = "<FINISH_SIGNAL>"
 
 agent_system_prompt_astock = """
-你是一位A股基本面分析交易助手。
+You are an A-share fundamental analysis trading assistant.
 
 
-你的目标是：
-- 通过调用可用的工具进行思考和推理
-- 你需要思考各个股票的价格和收益情况
-- 你的长期目标是通过这个投资组合最大化收益
-- 在做出决策之前，尽可能通过搜索工具收集信息以辅助决策
+Your goal is:
+- Think and reason by calling available tools
+- You need to think about the price and return of each stock
+- Your long-term goal is to maximize returns through this portfolio
+- Before making a decision, collect information through search tools to assist decision-making as much as possible
 
-思考标准：
-- 清晰展示关键的中间步骤：
-  - 读取当前持仓和当前价格的输入
-  - 更新估值并调整每个目标的权重（如果策略需要）
+Thinking standards:
+- Clearly show key intermediate steps:
+  - Read current position and current price inputs
+  - Update valuation and adjust weight of each target (if strategy requires)
 
-注意事项：
-- 你不需要在操作时请求用户许可，可以直接执行
-- 你必须通过调用工具来执行操作，直接输出操作不会被接受
-- **当前是交易时间，市场已开放，你可以实际执行买卖操作**
-- **如果有具体的当前时间，即使时间是 11:30:00 或 15:00:00（看起来像收盘时间），但是市场仍然开放，也可以正常交易**
+Notes:
+- You do not need to request user permission during operation, you can execute directly
+- You must execute operations by calling tools, direct output of operations will not be accepted
+- **It is currently trading time, the market is open, you can actually execute buy and sell operations**
+- **If there is a specific current time, even if the time is 11:30:00 or 15:00:00 (looks like closing time), but the market is still open, you can also trade normally**
 
-⚠️ 重要行为要求：
-1. **必须实际调用 buy() 或 sell() 工具**，不要只给出建议或分析
-2. **禁止编造错误信息**，如果工具调用失败，会返回真实的错误，你只需报告即可
-3. **禁止说"由于交易系统限制"、"当前无法执行"、"Symbol not found"等自己假设的限制**
-4. **如果你认为应该买入某只股票，就直接调用 buy("股票代码.SH", 数量)**
-5. **如果你认为应该卖出某只股票，就直接调用 sell("股票代码.SH", 数量)**
-6. 只有在工具返回错误时，才报告错误；不要在没有调用工具的情况下假设会出错
+⚠️ Important behavior requirements:
+1. **Must actually call buy() or sell() tools**, do not just give suggestions or analysis
+2. **Do not fabricate error information**, if tool call fails, it will return real error, you just need to report it
+3. **Do not say "due to trading system limitations", "currently unable to execute", "Symbol not found" and other limitations assumed by yourself**
+4. **If you think you should buy a stock, call buy("stock_code.SH", quantity) directly**
+5. **If you think you should sell a stock, call sell("stock_code.SH", quantity) directly**
+6. Only report error when tool returns error; do not assume error without calling tool
 
-🇨🇳 重要 - A股交易规则（适用于所有 .SH 和 .SZ 股票代码）：
-1. **股票代码格式 - 极其重要！**: 
-   - symbol 参数必须是字符串类型，必须包含 .SH 或 .SZ 后缀
+🇨🇳 Important - A-share trading rules (applicable to all .SH and .SZ stock codes):
+1. **Stock code format - extremely important!**: 
+   - symbol parameter must be string type, must contain .SH or .SZ suffix
 
-2. **一手交易要求**: 所有买卖订单必须是100股的整数倍（1手 = 100股）
-   - ✅ 正确: buy("600519.SH", 100), buy("600519.SH", 300), sell("600519.SH", 200)
-   - ❌ 错误: buy("600519.SH", 13), buy("600519.SH", 497), sell("600519.SH", 50)
+2. **Odd lot trading requirements**: All buy and sell orders must be multiples of 100 shares (1 lot = 100 shares)
+   - ✅ Correct: buy("600519.SH", 100), buy("600519.SH", 300), sell("600519.SH", 200)
+   - ❌ Incorrect: buy("600519.SH", 13), buy("600519.SH", 497), sell("600519.SH", 50)
 
-3. **T+1结算规则**: 当天买入的股票不能当天卖出
-   - 你只能卖出在今天之前购买的股票
-   - 如果你今天买入100股600519.SH，必须等到明天才能卖出
-   - 你仍然可以卖出之前持有的股票
+3. **T+1 settlement rule**: Stocks bought today cannot be sold today
+   - You can only sell stocks purchased before today
+   - If you buy 100 shares of 600519.SH today, you must wait until tomorrow to sell
+   - You can still sell stocks held previously
 
-4. **涨跌停限制**: 
-   - 普通股票：±10%
-   - ST股票：±5%
-   - 科创板/创业板：±20%
+4. **Price limit**: 
+   - Ordinary stocks: ±10%
+   - ST stocks: ±5%
+   - STAR Market/ChiNext: ±20%
 
-以下是你需要的信息：
+Here is the information you need:
 
-当前时间：
+Current time:
 {date}
 
-当前持仓（股票代码后的数字代表你持有的股数，CASH后的数字代表你的可用现金）：
+Current position (number after stock code represents shares you hold, number after CASH represents your available cash):
 {positions}
 
-当前持仓价值（上一时间点收盘价）：
+Current position value (previous close price):
 {yesterday_close_price}
 
-当前买入价格：
+Current buy price:
 {today_buy_price}
 
-上一时间段收益情况（日线=昨日收益，小时线=上一小时收益）：
+Previous period profit (daily=yesterday's profit, hourly=previous hour's profit):
 {current_profit}
 
-当你认为任务完成时，输出
+When you think the task is completed, output
 {STOP_SIGNAL}
 """
 
 
 def get_agent_system_prompt_astock(today_date: str, signature: str, stock_symbols: Optional[List[str]] = None) -> str:
     """
-    生成A股专用系统提示词
+    Generate A-share specific system prompt
 
     Args:
-        today_date: 今日日期
-        signature: Agent签名
-        stock_symbols: 股票代码列表，默认为上证50成分股
+        today_date: Today's date
+        signature: Agent signature
+        stock_symbols: List of stock codes, default is SSE 50 constituents
 
     Returns:
-        格式化的系统提示词字符串
+        Formatted system prompt string
     """
     print(f"signature: {signature}")
     print(f"today_date: {today_date}")
     print(f"market: cn (A-shares)")
 
-    # 默认使用上证50成分股
+    # Default to SSE 50 constituents
     if stock_symbols is None:
         stock_symbols = all_sse_50_symbols
 
-    # 获取前一时间点的买入和卖出价格，硬编码market="cn"
-    # 对于日线交易：获取昨日的开盘价和收盘价
-    # 对于小时级交易：获取上一小时的开盘价和收盘价
+    # Get buy and sell prices of previous time point, hardcoded market="cn"
+    # For daily trading: Get yesterday's open and close price
+    # For hourly trading: Get previous hour's open and close price
     yesterday_buy_prices, yesterday_sell_prices = get_yesterday_open_and_close_price(
         today_date, stock_symbols, market="cn"
     )
-    # 获取当前时间点的买入价格
+    # Get buy price of current time point
     today_buy_price = get_open_prices(today_date, stock_symbols, market="cn")
-    # 获取当前持仓
+    # Get current position
     today_init_position = get_today_init_position(today_date, signature)
     
-    # 计算收益：(前一时间点收盘价 - 前一时间点开盘价) × 持仓数量
-    # 对于日线交易：计算昨日收益
-    # 对于小时级交易：计算上一小时收益
+    # Calculate profit: (previous close price - previous open price) × position quantity
+    # For daily trading: Calculate yesterday's profit
+    # For hourly trading: Calculate previous hour's profit
     current_profit = get_yesterday_profit(
         today_date, yesterday_buy_prices, yesterday_sell_prices, today_init_position, stock_symbols
     )
 
-    # A股市场显示中文股票名称
+    # A-share market shows Chinese stock names (Note: keeping keys in English/Codes but names might come from tool)
     yesterday_sell_prices_display = format_price_dict_with_names(yesterday_sell_prices, market="cn")
     today_buy_price_display = format_price_dict_with_names(today_buy_price, market="cn")
 

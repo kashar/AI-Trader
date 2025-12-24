@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 获取项目根目录（scripts/ 的父目录）
+# Get project root directory (parent of scripts/)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 cd "$PROJECT_ROOT"
 
-echo "🤖 正在启动主交易智能体（A股模式）..."
+echo "🤖 Starting main trading agent (A-share mode)..."
 
-python main.py configs/astock_config.json  # 运行A股配置
+python main.py configs/astock_config.json  # Run A-share config
 
-echo "✅ AI-Trader 已停止"
+echo "✅ AI-Trader stopped"

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# A股数据准备
+# A-share Data Preparation
 
-# 获取项目根目录（scripts/ 的父目录）
+# Get project root directory (parent of scripts/)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 

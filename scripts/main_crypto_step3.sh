@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 获取项目根目录（scripts/ 的父目录）
+# Get project root directory (parent of scripts/)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
@@ -10,4 +10,4 @@ echo "🤖 Now starting the cryptocurrencies trading agent..."
 
 python main.py configs/default_crypto_config.json 
 
-echo "✅ AI-Trader 已停止"
+echo "✅ AI-Trader stopped"

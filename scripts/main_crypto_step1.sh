@@ -1,32 +1,32 @@
 #!/bin/bash
 
-# A股数据准备
+# Crypto Data Preparation
 
-# 获取项目根目录（scripts/ 的父目录）
+# Get project root directory (parent of scripts/)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 cd "$PROJECT_ROOT"
 
-# 确保 data/crypto 存在并进入该目录
+# Ensure data/crypto exists and enter it
 mkdir -p "$PROJECT_ROOT/data/crypto"
-cd "$PROJECT_ROOT/data/crypto" || { echo "无法进入目录 $PROJECT_ROOT/data/crypto"; exit 1; }
+cd "$PROJECT_ROOT/data/crypto" || { echo "Cannot enter directory $PROJECT_ROOT/data/crypto"; exit 1; }
 
-# 在运行 python 前输出当前工作目录
-echo "当前运行目录: $(pwd)"
-echo "即将运行: python get_daily_price_crypto.py"
+# Print current working directory before running python
+echo "Current directory: $(pwd)"
+echo "About to run: python get_daily_price_crypto.py"
 python get_daily_price_crypto.py
 
-echo "当前运行目录: $(pwd)"
-echo "即将运行: python merge_crypto_jsonl.py"
+echo "Current directory: $(pwd)"
+echo "About to run: python merge_crypto_jsonl.py"
 python merge_crypto_jsonl.py
 
 # # for tushare
-# echo "当前运行目录: $(pwd)"
-# echo "即将运行: python get_daily_price_tushare.py"
+# echo "Current directory: $(pwd)"
+# echo "About to run: python get_daily_price_tushare.py"
 # python get_daily_price_tushare.py
-# echo "当前运行目录: $(pwd)"
-# echo "即将运行: python merge_jsonl_tushare.py"
+# echo "Current directory: $(pwd)"
+# echo "About to run: python merge_jsonl_tushare.py"
 # python merge_jsonl_tushare.py
 
 cd ..

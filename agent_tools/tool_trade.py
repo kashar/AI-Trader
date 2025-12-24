@@ -117,10 +117,10 @@ def buy(symbol: str, amount: int) -> Dict[str, Any]:
             "date": today_date,
         }
 
-    # 🇨🇳 Chinese A-shares trading rule: Must trade in lots of 100 shares (一手 = 100股)
+    # 🇨🇳 Chinese A-shares trading rule: Must trade in lots of 100 shares
     if market == "cn" and amount % 100 != 0:
         return {
-            "error": f"Chinese A-shares must be traded in multiples of 100 shares (1 lot = 100 shares). You tried to buy {amount} shares.",
+            "error": f"Chinese A-shares must be traded in multiples of 100 shares. You tried to buy {amount} shares.",
             "symbol": symbol,
             "amount": amount,
             "date": today_date,
@@ -327,10 +327,10 @@ def sell(symbol: str, amount: int) -> Dict[str, Any]:
             "date": today_date,
         }
 
-    # 🇨🇳 Chinese A-shares trading rule: Must trade in lots of 100 shares (一手 = 100股)
+    # 🇨🇳 Chinese A-shares trading rule: Must trade in lots of 100 shares
     if market == "cn" and amount % 100 != 0:
         return {
-            "error": f"Chinese A-shares must be traded in multiples of 100 shares (1 lot = 100 shares). You tried to sell {amount} shares.",
+            "error": f"Chinese A-shares must be traded in multiples of 100 shares. You tried to sell {amount} shares.",
             "symbol": symbol,
             "amount": amount,
             "date": today_date,

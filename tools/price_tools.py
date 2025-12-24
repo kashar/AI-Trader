@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-# 将项目根目录加入 Python 路径，便于从子目录直接运行本文件
+# Add project root directory to Python path for running from subdirectories
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -46,27 +46,27 @@ def _parse_timestamp_to_dt(ts: str) -> datetime:
 
 def get_market_type() -> str:
     """
-    智能获取市场类型，支持多种检测方式：
-    1. 优先从配置中读取 MARKET
-    2. 如果未设置，则根据 LOG_PATH 推断（agent_data_astock -> cn, agent_data_crypto -> crypto, agent_data -> us）
-    3. 最后默认为 us
+    Intelligently determine market type, supporting multiple detection methods:
+    1. Prioritize reading MARKET from config
+    2. If not set, infer from LOG_PATH (agent_data_astock -> cn, agent_data_crypto -> crypto, agent_data -> us)
+    3. Finally default to us
 
     Returns:
         "cn" for A-shares market, "us" for US market, "crypto" for cryptocurrency market
     """
-    # 方式1: 从配置读取
+    # Method 1: Read from config
     market = get_config_value("MARKET", None)
     if market in ["cn", "us", "crypto"]:
         return market
 
-    # 方式2: 根据 LOG_PATH 推断
+    # Method 2: Infer from LOG_PATH
     log_path = get_config_value("LOG_PATH", "./data/agent_data")
     if "astock" in log_path.lower() or "a_stock" in log_path.lower():
         return "cn"
     elif "crypto" in log_path.lower():
         return "crypto"
 
-    # 方式3: 默认为美股
+    # Method 3: Default to US stock
     return "us"
 
 
@@ -372,7 +372,7 @@ def get_stock_name_mapping(market: str = "us") -> Dict[str, str]:
         market: Market type ("us" or "cn")
 
     Returns:
-        Dictionary mapping symbols to names, e.g. {"600519.SH": "贵州茅台"}
+        Dictionary mapping symbols to names, e.g. {"600519.SH": "Kweichow Moutai"}
     """
     merged_file_path = get_merged_file_path(market)
 
@@ -408,7 +408,7 @@ def format_price_dict_with_names(
         market: Market type ("us" or "cn")
 
     Returns:
-        New dictionary with keys like "600519.SH (贵州茅台)_price" for CN market,
+        New dictionary with keys like "600519.SH (Kweichow Moutai)_price" for CN market,
         unchanged for US market
     """
     if market != "cn":
@@ -436,18 +436,18 @@ def format_price_dict_with_names(
 
 def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, market: str = "us") -> str:
     """
-    获取输入日期的上一个交易日或时间点。
-    从 merged.jsonl 读取所有可用的交易时间，然后找到 today_date 的上一个时间。
+    Get the previous trading day or time point for the input date.
+    Read all available trading times from merged.jsonl, then find the previous time for today_date.
     
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS。
-        merged_path: 可选，自定义 merged.jsonl 路径；默认根据 market 参数读取对应市场的 merged.jsonl。
-        market: 市场类型，"us" 为美股，"cn" 为A股
+        today_date: Date string, format YYYY-MM-DD or YYYY-MM-DD HH:MM:SS.
+        merged_path: Optional, custom merged.jsonl path; default reads corresponding merged.jsonl based on market parameter.
+        market: Market type, "us" for US stock, "cn" for A-share
 
     Returns:
-        yesterday_date: 上一个交易日或时间点的字符串，格式与输入一致。
+        yesterday_date: Previous trading day or time point string, format consistent with input.
     """
-    # 解析输入日期/时间
+    # Parse input date/time
     if ' ' in today_date:
         input_dt = datetime.strptime(today_date, "%Y-%m-%d %H:%M:%S")
         date_only = False
@@ -455,11 +455,11 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
         input_dt = datetime.strptime(today_date, "%Y-%m-%d")
         date_only = True
     
-    # 获取 merged.jsonl 文件路径
+    # Get merged.jsonl file path
     merged_file = _resolve_merged_file_path_for_date(today_date, market, merged_path)
     
     if not merged_file.exists():
-        # 如果文件不存在，根据输入类型回退
+        # If file does not exist, fallback based on input type
         print(f"merged.jsonl file does not exist at {merged_file}")
         if date_only:
             yesterday_dt = input_dt - timedelta(days=1)
@@ -470,7 +470,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
             yesterday_dt = input_dt - timedelta(hours=1)
             return yesterday_dt.strftime("%Y-%m-%d %H:%M:%S")
     
-    # 从 merged.jsonl 读取所有可用的交易时间
+    # Read all available trading times from merged.jsonl
     all_timestamps = set()
     
     with merged_file.open("r", encoding="utf-8") as f:
@@ -479,7 +479,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
                 continue
             try:
                 doc = json.loads(line)
-                # 查找所有以 "Time Series" 开头的键
+                # Find all keys starting with "Time Series"
                 for key, value in doc.items():
                     if key.startswith("Time Series"):
                         if isinstance(value, dict):
@@ -489,7 +489,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
                 continue
     
     if not all_timestamps:
-        # 如果没有找到任何时间戳，根据输入类型回退
+        # If no timestamps found, fallback based on input type
         if date_only:
             yesterday_dt = input_dt - timedelta(days=1)
             while yesterday_dt.weekday() >= 5:
@@ -499,7 +499,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
             yesterday_dt = input_dt - timedelta(hours=1)
             return yesterday_dt.strftime("%Y-%m-%d %H:%M:%S")
     
-    # 将所有时间戳转换为 datetime 对象，并找到小于 today_date 的最大时间戳
+    # Convert all timestamps to datetime objects and find max timestamp less than today_date
     previous_timestamp = None
     
     for ts_str in all_timestamps:
@@ -511,7 +511,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
         except Exception:
             continue
     
-    # 如果没有找到更早的时间戳，根据输入类型回退
+    # If no earlier timestamp found, fallback based on input type
     if previous_timestamp is None:
         if date_only:
             yesterday_dt = input_dt - timedelta(days=1)
@@ -522,7 +522,7 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
             yesterday_dt = input_dt - timedelta(hours=1)
             return yesterday_dt.strftime("%Y-%m-%d %H:%M:%S")
 
-    # 返回结果
+    # Return result
     if date_only:
         return previous_timestamp.strftime("%Y-%m-%d")
     else:
@@ -533,16 +533,16 @@ def get_yesterday_date(today_date: str, merged_path: Optional[str] = None, marke
 def get_open_prices(
     today_date: str, symbols: List[str], merged_path: Optional[str] = None, market: str = "us"
 ) -> Dict[str, Optional[float]]:
-    """从 data/merged.jsonl 中读取指定日期与标的的开盘价。
+    """Read open prices for specified date and symbols from data/merged.jsonl.
 
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD或YYYY-MM-DD HH:MM:SS。
-        symbols: 需要查询的股票代码列表。
-        merged_path: 可选，自定义 merged.jsonl 路径；默认读取项目根目录下 data/merged.jsonl。
-        market: 市场类型，"us" 为美股，"cn" 为A股
+        today_date: Date string, format YYYY-MM-DD or YYYY-MM-DD HH:MM:SS.
+        symbols: List of stock symbols to query.
+        merged_path: Optional, custom merged.jsonl path; defaults to data/merged.jsonl in project root.
+        market: Market type, "us" for US stock, "cn" for A-share
 
     Returns:
-        {symbol_price: open_price 或 None} 的字典；若未找到对应日期或标的，则值为 None。
+        Dictionary of {symbol_price: open_price or None}; value is None if date or symbol not found.
     """
     wanted = set(symbols)
     results: Dict[str, Optional[float]] = {}
@@ -564,7 +564,7 @@ def get_open_prices(
             sym = meta.get("2. Symbol")
             if sym not in wanted:
                 continue
-            # 查找所有以 "Time Series" 开头的键
+            # Find all keys starting with "Time Series"
             series = None
             for key, value in doc.items():
                 if key.startswith("Time Series"):
@@ -588,16 +588,16 @@ def get_open_prices(
 def get_yesterday_open_and_close_price(
     today_date: str, symbols: List[str], merged_path: Optional[str] = None, market: str = "us"
 ) -> Tuple[Dict[str, Optional[float]], Dict[str, Optional[float]]]:
-    """从 data/merged.jsonl 中读取指定日期与股票的昨日买入价和卖出价。
+    """Read yesterday's buy and sell prices for specified date and stocks from data/merged.jsonl.
 
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD，代表今天日期。
-        symbols: 需要查询的股票代码列表。
-        merged_path: 可选，自定义 merged.jsonl 路径；默认读取项目根目录下 data/merged.jsonl。
-        market: 市场类型，"us" 为美股，"cn" 为A股
+        today_date: Date string, format YYYY-MM-DD, representing today.
+        symbols: List of stock symbols to query.
+        merged_path: Optional, custom merged.jsonl path; defaults to data/merged.jsonl in project root.
+        market: Market type, "us" for US stock, "cn" for A-share
 
     Returns:
-        (买入价字典, 卖出价字典) 的元组；若未找到对应日期或标的，则值为 None。
+        Tuple of (buy price dict, sell price dict); value is None if date or symbol not found.
     """
     wanted = set(symbols)
     buy_results: Dict[str, Optional[float]] = {}
@@ -622,7 +622,7 @@ def get_yesterday_open_and_close_price(
             sym = meta.get("2. Symbol")
             if sym not in wanted:
                 continue
-            # 查找所有以 "Time Series" 开头的键
+            # Find all keys starting with "Time Series"
             series = None
             for key, value in doc.items():
                 if key.startswith("Time Series"):
@@ -631,11 +631,11 @@ def get_yesterday_open_and_close_price(
             if not isinstance(series, dict):
                 continue
 
-            # 尝试获取昨日买入价和卖出价
+            # Try to get yesterday's buy and sell prices
             bar = series.get(yesterday_date)
             if isinstance(bar, dict):
-                buy_val = bar.get("1. buy price")  # 买入价字段
-                sell_val = bar.get("4. sell price")  # 卖出价字段
+                buy_val = bar.get("1. buy price")  # Buy price field
+                sell_val = bar.get("4. sell price")  # Sell price field
 
                 try:
                     buy_price = float(buy_val) if buy_val is not None else None
@@ -646,7 +646,7 @@ def get_yesterday_open_and_close_price(
                     buy_results[f"{sym}_price"] = None
                     sell_results[f"{sym}_price"] = None
             else:
-                # 如果昨日没有数据，尝试向前查找最近的交易日
+                # If no data for yesterday, try to look back for nearest trading day
                 # raise ValueError(f"No data found for {sym} on {yesterday_date}")
                 # print(f"No data found for {sym} on {yesterday_date}")
                 buy_results[f'{sym}_price'] = None
@@ -656,10 +656,10 @@ def get_yesterday_open_and_close_price(
                 # current_date = yesterday_dt
                 # found_data = False
                 
-                # # 最多向前查找5个交易日
+                # # Look back at most 5 trading days
                 # for _ in range(5):
                 #     current_date -= timedelta(days=1)
-                #     # 跳过周末
+                #     # Skip weekends
                 #     while current_date.weekday() >= 5:
                 #         current_date -= timedelta(days=1)
                     
@@ -694,44 +694,44 @@ def get_yesterday_profit(
     stock_symbols: Optional[List[str]] = None,
 ) -> Dict[str, float]:
     """
-    获取持仓收益（适用于日线和小时级交易）
+    Get holding profit (applicable for daily and hourly trading)
     
-    收益计算方式为：(前一时间点收盘价 - 前一时间点开盘价) × 当前持仓数量
+    Profit calculation method: (previous time point closing price - previous time point opening price) * current holding quantity
     
-    对于日线交易：计算昨日的收益
-    对于小时级交易：计算上一小时的收益
+    For daily trading: Calculate yesterday's profit
+    For hourly trading: Calculate previous hour's profit
     
     Args:
-        today_date: 日期/时间字符串，格式 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS
-        yesterday_buy_prices: 前一时间点开盘价格字典，格式为 {symbol_price: price}
-        yesterday_sell_prices: 前一时间点收盘价格字典，格式为 {symbol_price: price}
-        yesterday_init_position: 前一时间点初始持仓字典，格式为 {symbol: quantity}
-        stock_symbols: 股票代码列表，默认为 all_nasdaq_100_symbols
+        today_date: Date/time string, format YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+        yesterday_buy_prices: Previous time point opening price dict, format {symbol_price: price}
+        yesterday_sell_prices: Previous time point closing price dict, format {symbol_price: price}
+        yesterday_init_position: Previous time point initial holding dict, format {symbol: quantity}
+        stock_symbols: Stock symbol list, defaults to all_nasdaq_100_symbols
 
     Returns:
-        {symbol: profit} 的字典；若未找到对应日期或标的，则值为 0.0。
+        Dict of {symbol: profit}; value is 0.0 if corresponding date or symbol not found.
     """
     profit_dict = {}
 
-    # 使用传入的股票列表或默认的纳斯达克100列表
+    # Use provided stock list or default NASDAQ 100 list
     if stock_symbols is None:
         stock_symbols = all_nasdaq_100_symbols
 
-    # 遍历所有股票代码
+    # Iterate through all stock symbols
     for symbol in stock_symbols:
         symbol_price_key = f"{symbol}_price"
 
-        # 获取昨日开盘价和收盘价
+        # Get yesterday's open and close prices
         buy_price = yesterday_buy_prices.get(symbol_price_key)
         sell_price = yesterday_sell_prices.get(symbol_price_key)
 
-        # 获取昨日持仓权重
+        # Get yesterday's position weight
         position_weight = yesterday_init_position.get(symbol, 0.0)
 
-        # 计算收益：(收盘价 - 开盘价) * 持仓权重
+        # Calculate profit: (close price - open price) * position weight
         if buy_price is not None and sell_price is not None and position_weight > 0:
             profit = (sell_price - buy_price) * position_weight
-            profit_dict[symbol] = round(profit, 4)  # 保留4位小数
+            profit_dict[symbol] = round(profit, 4)  # Keep 4 decimal places
         else:
             profit_dict[symbol] = 0.0
 
@@ -739,15 +739,15 @@ def get_yesterday_profit(
 
 def get_today_init_position(today_date: str, signature: str) -> Dict[str, float]:
     """
-    获取今日开盘时的初始持仓（即文件中上一个交易日代表的持仓）。从../data/agent_data/{signature}/position/position.jsonl中读取。
-    如果同一日期有多条记录，选择id最大的记录作为初始持仓。
+    Get initial position at today's open (represented by previous trading day in the file). Read from ../data/agent_data/{signature}/position/position.jsonl.
+    If multiple records exist for the same date, select the record with the largest id as the initial position.
 
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD，代表今天日期。
-        signature: 模型名称，用于构建文件路径。
+        today_date: Date string, format YYYY-MM-DD, representing today.
+        signature: Model name, used to build file path.
 
     Returns:
-        {symbol: weight} 的字典；若未找到对应日期，则返回空字典。
+        Dictionary of {symbol: weight}; returns empty dict if date not found.
     """
     from tools.general_tools import get_config_value
     import os
@@ -774,7 +774,7 @@ def get_today_init_position(today_date: str, signature: str) -> Dict[str, float]
         print(f"Position file {position_file} does not exist")
         return {}
     
-    # 获取市场类型，智能判断
+    # Get market type, intelligent judgment
     market = get_market_type()
     yesterday_date = get_yesterday_date(today_date, market=market)
     
@@ -805,18 +805,18 @@ def get_today_init_position(today_date: str, signature: str) -> Dict[str, float]
 
 def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, float], int]:
     """
-    获取最新持仓。从 ../data/agent_data/{signature}/position/position.jsonl 中读取。
-    优先选择当天 (today_date) 中 id 最大的记录；
-    若当天无记录，则回退到上一个交易日，选择该日中 id 最大的记录。
+    Get latest position. Read from ../data/agent_data/{signature}/position/position.jsonl.
+    Prefer record with largest id on today_date;
+    If no record today, fallback to previous trading day, select record with largest id.
 
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD，代表今天日期。
-        signature: 模型名称，用于构建文件路径。
+        today_date: Date string, format YYYY-MM-DD, representing today.
+        signature: Model name, used to build file path.
 
     Returns:
         (positions, max_id):
-          - positions: {symbol: weight} 的字典；若未找到任何记录，则为空字典。
-          - max_id: 选中记录的最大 id；若未找到任何记录，则为 -1.
+          - positions: Dict of {symbol: weight}; empty dict if no record found.
+          - max_id: Max id of selected record; -1 if no record found.
     """
     from tools.general_tools import get_config_value
     import os
@@ -841,10 +841,10 @@ def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, floa
     if not position_file.exists():
         return {}, -1
 
-    # 获取市场类型，智能判断
+    # Get market type, intelligent judgment
     market = get_market_type()
     
-    # Step 1: 先查找当天的记录
+    # Step 1: Check today's records first
     max_id_today = -1
     latest_positions_today: Dict[str, float] = {}
     
@@ -862,11 +862,11 @@ def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, floa
             except Exception:
                 continue
     
-    # 如果当天有记录，直接返回
+    # If record exists for today, return directly
     if max_id_today >= 0 and latest_positions_today:
         return latest_positions_today, max_id_today
     
-    # Step 2: 当天没有记录，则回退到上一个交易日
+    # Step 2: No record for today, fallback to previous trading day
     prev_date = get_yesterday_date(today_date, market=market)
     
     max_id_prev = -1
@@ -886,7 +886,7 @@ def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, floa
             except Exception:
                 continue
     
-    # 如果前一天也没有记录，尝试找文件中最新的非空记录（按实际时间和id排序）
+    # If no record for previous day either, try finding latest non-empty record (sorted by actual time and id)
     if max_id_prev < 0 or not latest_positions_prev:
         all_records: List[Dict[str, Any]] = []
         norm_today = _normalize_timestamp_str(today_date)
@@ -902,17 +902,17 @@ def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, floa
                         continue
                     norm_doc_date = _normalize_timestamp_str(doc_date)
                     doc_dt = _parse_timestamp_to_dt(norm_doc_date)
-                    # 仅考虑早于today_date的记录
+                    # Only consider records earlier than today_date
                     if doc_dt < today_dt:
                         positions = doc.get("positions", {})
-                        # 跳过空持仓记录
+                        # Skip empty position records
                         if positions:
                             all_records.append(doc)
                 except Exception:
                     continue
         
         if all_records:
-            # 先按实际时间排序，再按id排序，取最新的一条
+            # Sort by actual time then id, take the latest one
             all_records.sort(
                 key=lambda x: (
                     _parse_timestamp_to_dt(_normalize_timestamp_str(x.get("date", "1900-01-01"))),
@@ -927,10 +927,10 @@ def get_latest_position(today_date: str, signature: str) -> Tuple[Dict[str, floa
 
 def add_no_trade_record(today_date: str, signature: str):
     """
-    添加不交易记录。从 ../data/agent_data/{signature}/position/position.jsonl 中前一日最后一条持仓，并更新在今日的position.jsonl文件中。
+    Add no-trade record. Read last position from previous day in ../data/agent_data/{signature}/position/position.jsonl and update in today's position.jsonl file.
     Args:
-        today_date: 日期字符串，格式 YYYY-MM-DD，代表今天日期。
-        signature: 模型名称，用于构建文件路径。
+        today_date: Date string, format YYYY-MM-DD, representing today.
+        signature: Model name, used to build file path.
 
     Returns:
         None

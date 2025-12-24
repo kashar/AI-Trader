@@ -7,7 +7,7 @@ import pandas as pd
 import efinance as ef
 
 
-# 配置日志
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class AStockIntradayDataFetcher:
-    """A股盘中数据获取器
+    """A-shares Intraday Data Fetcher
     
-    用于批量获取A股市场的盘中K线数据，支持自定义时间周期和日期范围。
-    支持增量更新，自动检测已有数据并从最后日期的下一天开始获取。
+    Used to batch fetch intraday K-line data for A-shares market, supports custom time period and date range.
+    Supports incremental updates, automatically detects existing data and starts fetching from the day after the last date.
     
     Attributes:
-        frequency: K线周期（分钟），默认60分钟
-        data_dir: 数据存储目录
-        stock_list_file: 股票列表文件名
-        output_file: 输出文件名
+        frequency: K-line frequency (minutes), default 60 minutes
+        data_dir: Data storage directory
+        stock_list_file: Stock list filename
+        output_file: Output filename
     """
     
     def __init__(
@@ -35,13 +35,13 @@ class AStockIntradayDataFetcher:
         stock_list_file: str = "sse_50_weight.csv",
         output_file: str = "A_stock_hourly.csv"
     ) -> None:
-        """初始化数据获取器
+        """Initialize data fetcher
         
         Args:
-            frequency: K线周期（分钟），默认60分钟
-            data_dir: 数据目录路径，默认为 A_stock_data 子目录
-            stock_list_file: 股票列表CSV文件名（相对于脚本所在目录），默认为 sse_50_weight.csv
-            output_file: 输出文件名
+            frequency: K-line cycle (minutes), default 60 minutes
+            data_dir: Data directory path, default is A_stock_data subdirectory
+            stock_list_file: Stock list CSV filename (relative to script directory), default sse_50_weight.csv
+            output_file: Output filename
         """
         self.frequency = frequency
         
@@ -63,90 +63,90 @@ class AStockIntradayDataFetcher:
         self.output_file = output_file
         self.output_path = self.data_dir / output_file
         
-        logger.info(f"初始化数据获取器: frequency={frequency}分钟, data_dir={self.data_dir}")
+        logger.info(f"Initialize data fetcher: frequency={frequency}mins, data_dir={self.data_dir}")
     
     def load_stock_list(self) -> List[str]:
-        """从CSV文件加载股票代码列表
+        """Load stock code list from CSV file
         
-        从 sse_50_weight.csv 文件中读取 con_code 列，提取上证50成分股代码。
+        Read con_code column from sse_50_weight.csv, extract SSE 50 component stock codes.
         
         Returns:
-            股票代码列表（不含后缀，如 '600519'）
+            Stock code list (without suffix, e.g. '600519')
             
         Raises:
-            FileNotFoundError: 当股票列表文件不存在时
+            FileNotFoundError: When stock list file does not exist
         """
         if not self.stock_list_path.exists():
-            raise FileNotFoundError(f"股票列表文件不存在: {self.stock_list_path}")
+            raise FileNotFoundError(f"Stock list file does not exist: {self.stock_list_path}")
         
-        logger.info(f"从 {self.stock_list_path} 加载股票列表")
+        logger.info(f"Load stock list from {self.stock_list_path}")
         df = pd.read_csv(self.stock_list_path)
         
-        # 从 con_code 列提取唯一的股票代码
+        # Extract unique stock codes from con_code column
         if "con_code" not in df.columns:
-            raise ValueError(f"文件 {self.stock_list_path} 中缺少 'con_code' 列")
+            raise ValueError(f"Missing 'con_code' column in file {self.stock_list_path}")
         
         stock_list = df["con_code"].unique()
         
-        # 去除 .SH 或 .SZ 后缀
+        # Remove .SH or .SZ suffix
         stock_list = [code.replace(".SH", "").replace(".SZ", "") for code in stock_list]
         
-        logger.info(f"成功加载 {len(stock_list)} 只股票")
-        logger.debug(f"股票列表: {stock_list[:5]}..." if len(stock_list) > 5 else f"股票列表: {stock_list}")
+        logger.info(f"Successfully loaded {len(stock_list)} stocks")
+        logger.debug(f"Stock list: {stock_list[:5]}..." if len(stock_list) > 5 else f"Stock list: {stock_list}")
         
         return stock_list
     
     def get_date_range(self, default_start_date: str = "20251001") -> Tuple[str, str]:
-        """获取数据日期范围
+        """Get data date range
         
-        如果输出文件已存在，则从文件中最后一天的下一天开始；
-        否则使用默认开始日期。结束日期始终为今天。
+        If output file exists, start from the day after the last day in file;
+        Otherwise use default start date. End date is always today.
         
         Args:
-            default_start_date: 默认开始日期，格式 'YYYYMMDD'
+            default_start_date: Default start date, format 'YYYYMMDD'
             
         Returns:
-            Tuple[str, str]: (begin_date, end_date) 格式为 'YYYYMMDD'
+            Tuple[str, str]: (begin_date, end_date) format 'YYYYMMDD'
         """
-        # 结束日期始终为今天
+        # End date is always today
         end_date = datetime.now().strftime("%Y%m%d")
         
-        # 检查输出文件是否存在
+        # Check if output file exists
         if self.output_path.exists():
             try:
-                logger.info(f"检测到已存在的数据文件: {self.output_path}")
+                logger.info(f"Detected existing data file: {self.output_path}")
                 df_existing = pd.read_csv(self.output_path)
                 
                 if not df_existing.empty and 'trade_date' in df_existing.columns:
-                    # 获取最后一条记录的日期
-                    # trade_date格式: "2025-10-09 10:30"
+                    # Get last record date
+                    # trade_date format: "2025-10-09 10:30"
                     last_date_str = df_existing['trade_date'].max()
                     
-                    # 提取日期部分（去掉时间）
+                    # Extract date part (remove time)
                     last_date = datetime.strptime(last_date_str.split()[0], "%Y-%m-%d")
                     
-                    # 计算下一天
+                    # Calculate next day
                     next_date = last_date + timedelta(days=1)
                     begin_date = next_date.strftime("%Y%m%d")
                     
-                    logger.info(f"已有数据的最后日期: {last_date.strftime('%Y-%m-%d')}")
-                    logger.info(f"将从 {begin_date} 开始增量更新")
+                    logger.info(f"Last date of existing data: {last_date.strftime('%Y-%m-%d')}")
+                    logger.info(f"Will start incremental update from {begin_date}")
                     
-                    # 检查是否已经是最新数据
+                    # Check if already latest
                     if begin_date > end_date:
-                        logger.info("数据已是最新，无需更新")
+                        logger.info("Data is already up to date, no update needed")
                         return begin_date, end_date
                     
                     return begin_date, end_date
                 else:
-                    logger.warning("已有文件为空或缺少trade_date列，使用默认开始日期")
+                    logger.warning("Existing file is empty or missing trade_date column, using default start date")
                     return default_start_date, end_date
                     
             except Exception as e:
-                logger.warning(f"读取已有数据文件失败: {e}，使用默认开始日期")
+                logger.warning(f"Failed to read existing data file: {e}, using default start date")
                 return default_start_date, end_date
         else:
-            logger.info(f"未检测到已有数据文件，将从 {default_start_date} 开始获取")
+            logger.info(f"Existing data file not detected, fetching from {default_start_date}")
             return default_start_date, end_date
     
     def fetch_intraday_data(
@@ -155,18 +155,18 @@ class AStockIntradayDataFetcher:
         begin_date: str,
         end_date: str
     ) -> dict:
-        """批量获取股票盘中数据
+        """Batch fetch intraday data for stocks
         
         Args:
-            stock_list: 股票代码列表
-            begin_date: 开始日期，格式 'YYYYMMDD'
-            end_date: 结束日期，格式 'YYYYMMDD'（通常为当天日期）
+            stock_list: List of stock codes
+            begin_date: Start date, format 'YYYYMMDD'
+            end_date: End date, format 'YYYYMMDD' (usually today)
             
         Returns:
-            包含所有股票数据的字典，key为股票代码，value为DataFrame
+            Dictionary containing data for all stocks, key is stock code, value is DataFrame
         """
-        logger.info(f"开始获取 {len(stock_list)} 只股票的盘中数据")
-        logger.info(f"时间范围: {begin_date} - {end_date}, 周期: {self.frequency}分钟")
+        logger.info(f"Start fetching intraday data for {len(stock_list)} stocks")
+        logger.info(f"Time range: {begin_date} - {end_date}, Period: {self.frequency} mins")
         
         try:
             df_dict = ef.stock.get_quote_history(
@@ -175,10 +175,10 @@ class AStockIntradayDataFetcher:
                 beg=begin_date,
                 end=end_date
             )
-            logger.info("数据获取成功")
+            logger.info("Data fetched successfully")
             return df_dict
         except Exception as e:
-            logger.error(f"数据获取失败: {e}")
+            logger.error(f"Data fetch failed: {e}")
             raise
     
     def process_and_save_data(
@@ -186,67 +186,56 @@ class AStockIntradayDataFetcher:
         df_dict: dict,
         is_incremental: bool = False
     ) -> pd.DataFrame:
-        """处理并保存数据
-        
-        将字典格式的数据整合为单个DataFrame，统一列名并保存。
-        支持增量更新模式，新数据会追加到已有数据中。
-        
-        Args:
-            df_dict: 股票数据字典
-            is_incremental: 是否为增量更新模式
-            
-        Returns:
-            整合后的DataFrame
-        """
-        logger.info("开始处理数据")
+
+        logger.info("Start processing data")
         
         df_new = pd.DataFrame()
         
-        # 遍历每只股票的数据
+        # Iterate over each stock's data
         for stock_code, df_one in df_dict.items():
             df_new = pd.concat([df_new, df_one], ignore_index=True)
         
-        # 重置索引
+        # Reset index
         df_new.reset_index(drop=True, inplace=True)
         
-        # 选择并重命名列
+        # Select and rename columns
         df_new = df_new[['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量']]
         df_new.columns = ['stock_name', 'stock_code', 'trade_date', 'open', 'close', 'high', 'low', 'volume']
         
-        # 统一股票代码格式（添加.SH后缀）
+        # Unify stock code format (add .SH suffix)
         df_new["stock_code"] = df_new["stock_code"].apply(lambda x: x + ".SH")
         
-        # 如果是增量更新且已有文件存在，则合并数据
+        # If incremental update and existing file exists, merge data
         if is_incremental and self.output_path.exists():
             try:
-                logger.info("增量更新模式：合并新旧数据")
+                logger.info("Incremental update mode: merging old and new data")
                 df_old = pd.read_csv(self.output_path)
                 
-                # 合并新旧数据
+                # Merge old and new data
                 df_total = pd.concat([df_old, df_new], ignore_index=True)
                 
-                # 去重（基于stock_code和trade_date，保留最新的数据）
+                # Deduplicate (data based on stock_code and trade_date, keep last)
                 df_total = df_total.drop_duplicates(
                     subset=['stock_code', 'trade_date'],
                     keep='last'
                 ).reset_index(drop=True)
                 
-                # 按日期和股票代码排序
+                # Sort by date and stock code
                 df_total = df_total.sort_values(
                     by=['trade_date', 'stock_code']
                 ).reset_index(drop=True)
                 
-                logger.info(f"合并后总记录数: {len(df_total)} (旧: {len(df_old)}, 新: {len(df_new)})")
+                logger.info(f"Total records after merge: {len(df_total)} (Old: {len(df_old)}, New: {len(df_new)})")
             except Exception as e:
-                logger.warning(f"合并数据失败: {e}，将只保存新数据")
+                logger.warning(f"Failed to merge data: {e}, will only save new data")
                 df_total = df_new
         else:
             df_total = df_new
         
-        # 保存到CSV
+        # Save to CSV
         df_total.to_csv(self.output_path, index=False, encoding='utf-8')
-        logger.info(f"数据已保存到: {self.output_path}")
-        logger.info(f"总共 {len(df_total)} 条记录")
+        logger.info(f"Data saved to: {self.output_path}")
+        logger.info(f"Total {len(df_total)} records")
         
         return df_total
     
@@ -255,32 +244,19 @@ class AStockIntradayDataFetcher:
         default_start_date: str = "20251001",
         auto_date_range: bool = True
     ) -> Optional[pd.DataFrame]:
-        """执行完整的数据获取流程
-        
-        支持自动日期范围检测：
-        - 如果已有数据文件，从最后日期的下一天开始获取
-        - 如果没有数据文件，从default_start_date开始获取
-        - 结束日期始终为今天
-        
-        Args:
-            default_start_date: 默认开始日期，格式 'YYYYMMDD'（仅在没有已有数据时使用）
-            auto_date_range: 是否自动检测日期范围，默认True
-            
-        Returns:
-            整合后的DataFrame，如果无需更新则返回None
-        """
+
         try:
-            # 1. 加载股票列表
+            # 1. Load stock list
             stock_list = self.load_stock_list()
             
-            # 2. 确定日期范围
+            # 2. Determine date range
             if auto_date_range:
                 begin_date, end_date = self.get_date_range(default_start_date)
                 
-                # 检查是否需要更新
+                # Check if update needed
                 if begin_date > end_date:
-                    logger.info("数据已是最新，无需更新")
-                    # 返回已有数据
+                    logger.info("Data is up to date, no update needed")
+                    # Return existing data
                     if self.output_path.exists():
                         return pd.read_csv(self.output_path)
                     return None
@@ -291,53 +267,47 @@ class AStockIntradayDataFetcher:
                 end_date = datetime.now().strftime("%Y%m%d")
                 is_incremental = False
             
-            # 3. 获取盘中数据
-            logger.info(f"数据获取日期范围: {begin_date} - {end_date}")
+            # 3. Fetch intraday data
+            logger.info(f"Data fetch date range: {begin_date} - {end_date}")
             df_dict = self.fetch_intraday_data(stock_list, begin_date, end_date)
             
-            # 4. 处理并保存数据
+            # 4. Process and save data
             df_total = self.process_and_save_data(df_dict, is_incremental)
             
-            logger.info("数据获取流程完成")
+            logger.info("Data fetch process completed")
             return df_total
             
         except Exception as e:
-            logger.error(f"数据获取流程失败: {e}")
+            logger.error(f"Data fetch process failed: {e}")
             raise
 
 
 def main():
-    """主函数
-    
-    执行A股盘中数据获取，支持增量更新：
-    - 首次运行：从default_start_date开始获取所有数据
-    - 后续运行：自动从上次最后日期的下一天开始获取
-    """
-    # 创建数据获取器实例
+    # Create data fetcher instance
     fetcher = AStockIntradayDataFetcher(
-        frequency=60,  # 60分钟K线
-        stock_list_file="sse_50_weight.csv",  # 上证50权重文件
+        frequency=60,  # 60 mins K-line
+        stock_list_file="sse_50_weight.csv",  # SSE 50 weights file
         output_file="A_stock_hourly.csv"
     )
     
-    # 执行数据获取（自动检测日期范围）
+    # Execute data fetch (auto date range detection)
     df = fetcher.run(
-        default_start_date="20251001",  # 仅在首次运行时使用
-        auto_date_range=True  # 启用自动日期范围检测
+        default_start_date="20251001",  # Only used for first run
+        auto_date_range=True  # Enable auto date range detection
     )
     
-    # 显示数据概览
+    # Show data overview
     if df is not None and not df.empty:
         print("\n" + "="*50)
-        print("数据概览:")
+        print("Data Overview:")
         print("="*50)
         print(df.head(10))
-        print(f"\n数据形状: {df.shape}")
-        print(f"股票数量: {df['stock_code'].nunique()}")
-        print(f"日期范围: {df['trade_date'].min()} - {df['trade_date'].max()}")
+        print(f"\nData Shape: {df.shape}")
+        print(f"Stock Count: {df['stock_code'].nunique()}")
+        print(f"Date Range: {df['trade_date'].min()} - {df['trade_date'].max()}")
     else:
         print("\n" + "="*50)
-        print("无新数据或数据获取失败")
+        print("No new data or data fetch failed")
         print("="*50)
 
 

@@ -4,7 +4,7 @@ import numpy as np
 import sys
 from pathlib import Path
 
-# 添加项目根目录到路径，以便导入result_tools
+# Add project root to path for importing result_tools
 project_root = Path(__file__).resolve().parents[2]  # data/crypto -> AI-Trader
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -14,54 +14,54 @@ from tools.result_tools import (
     calculate_cumulative_return, calculate_volatility, calculate_win_rate
 )
 
-# 读取CD5指数数据
+# Read CD5 index data
 with open('CD5_crypto_index.json', 'r') as f:
     data = json.load(f)
 
 time_series = data['Time Series (Daily)']
 dates = sorted(time_series.keys())
 
-# 过滤掉11-01的数据，从11-02开始，与agent模拟时间保持一致
+# Filter data from 11-01, start from 11-02 to align with agent simulation time
 agent_start_date = "2025-11-02"
 if agent_start_date in dates:
     start_index = dates.index(agent_start_date)
     dates = dates[start_index:]
-    print(f'⚠️ 时间对齐: 跳过11-01，从{agent_start_date}开始计算，与agent模拟保持一致')
+    print(f'⚠️ Time alignment: Skip 11-01, start from {agent_start_date} to align with agent simulation')
 else:
-    print(f'⚠️ 未找到{agent_start_date}数据，使用全部可用数据')
+    print(f'⚠️ {agent_start_date} data not found, using all available data')
 
-print('=== CD5指数数据分析 (与Agent时间对齐) ===')
-print(f'数据日期范围: {dates[0]} 到 {dates[-1]}')
-print(f'总交易日数: {len(dates)}')
+print('=== CD5 Index Analysis (Aligned with Agent Time) ===')
+print(f'Data Date Range: {dates[0]} to {dates[-1]}')
+print(f'Total Trading Days: {len(dates)}')
 
-# 计算CD5指数表现 (与result_tools.py保持一致，使用收盘价)
-# 构建组合价值字典 (与result_tools.py格式一致)
+# Calculate CD5 index performance (consistent with result_tools.py, using close price)
+# Build portfolio value dict (consistent with result_tools.py format)
 portfolio_values = {}
 for date in dates:
     portfolio_values[date] = float(time_series[date]['4. close'])
 
-initial_value = portfolio_values[dates[0]]  # 使用第一天的收盘价，与result_tools.py一致
-final_value = portfolio_values[dates[-1]]  # 使用最后一天的收盘价
+initial_value = portfolio_values[dates[0]]  # Use first day close price, consistent with result_tools.py
+final_value = portfolio_values[dates[-1]]  # Use last day close price
 
-print(f'初始价值: ${initial_value:,.2f}')
-print(f'最终价值: ${final_value:,.2f}')
-print(f'价值变化: ${final_value - initial_value:,.2f}')
+print(f'Initial Value: ${initial_value:,.2f}')
+print(f'Final Value: ${final_value:,.2f}')
+print(f'Value Change: ${final_value - initial_value:,.2f}')
 
-# 使用result_tools.py的函数计算指标，确保完全一致
+# Use result_tools.py functions to calculate metrics, ensuring consistency
 from datetime import datetime
 
-# 计算各项指标 (与result_tools.py保持完全一致)
+# Calculate metrics (fully consistent with result_tools.py)
 daily_returns = calculate_daily_returns(portfolio_values)
-volatility = calculate_volatility(daily_returns, trading_days=365)  # 加密货币365天
+volatility = calculate_volatility(daily_returns, trading_days=365)  # Crypto 365 days
 win_rate = calculate_win_rate(daily_returns)
-sharpe_ratio = calculate_sharpe_ratio(daily_returns, trading_days=365)  # 加密货币365天
+sharpe_ratio = calculate_sharpe_ratio(daily_returns, trading_days=365)  # Crypto 365 days
 max_drawdown, drawdown_start, drawdown_end = calculate_max_drawdown(portfolio_values)
 
-# 使用result_tools.py的累计收益率函数确保一致性
+# Use result_tools.py cumulative return function for consistency
 cumulative_return = calculate_cumulative_return(portfolio_values)
-print(f'累计收益率: {cumulative_return:.2%} (使用result_tools.py计算)')
+print(f'Cumulative Return: {cumulative_return:.2%} (calculated by result_tools.py)')
 
-# 计算年化收益率
+# Calculate annualized return
 start_date = datetime.strptime(dates[0], "%Y-%m-%d")
 end_date = datetime.strptime(dates[-1], "%Y-%m-%d")
 days = (end_date - start_date).days
@@ -71,33 +71,33 @@ if days > 0:
 else:
     annualized_return = 0.0
 
-print(f'年化收益率: {annualized_return:.2%}')
-print(f'投资天数: {days}天')
-print(f'最大回撤: {max_drawdown:.2%}')
-print(f'回撤期间: {drawdown_start} 到 {drawdown_end}')
-print(f'年化波动率: {volatility:.2%}')
-print(f'夏普比率: {sharpe_ratio:.4f}')
-print(f'胜率: {win_rate:.2%}')
+print(f'Annualized Return: {annualized_return:.2%}')
+print(f'Investment Days: {days} days')
+print(f'Max Drawdown: {max_drawdown:.2%}')
+print(f'Drawdown Period: {drawdown_start} to {drawdown_end}')
+print(f'Annualized Volatility: {volatility:.2%}')
+print(f'Sharpe Ratio: {sharpe_ratio:.4f}')
+print(f'Win Rate: {win_rate:.2%}')
 
-# 为了兼容性，保留原有的变量名
+# Keep original variable names for compatibility
 daily_volatility = np.std(daily_returns, ddof=1) if daily_returns else 0.0
 mean_return = np.mean(daily_returns) if daily_returns else 0.0
 annualized_return_for_sharpe = mean_return * 365
 risk_free_rate = 0.02
 
-# portfolio_values 已经在上面构建了，无需重复
+# portfolio_values already built above, no need to repeat
 
 # 输出用于报告的数据
-print(f'\n=== 用于报告的数据 ===')
-print(f'CD5指数:')
-print(f'  累计收益率: {cumulative_return:.2%}')
-print(f'  年化收益率: {annualized_return:.2%}')
-print(f'  夏普比率: {sharpe_ratio:.4f}')
-print(f'  最大回撤: {max_drawdown:.2%}')
-print(f'  胜率: {win_rate:.2%}')
-print(f'  最终价值: ${final_value:,.0f}')
+print(f'\n=== Data for Report ===')
+print(f'CD5 Index:')
+print(f'  Cumulative Return: {cumulative_return:.2%}')
+print(f'  Annualized Return: {annualized_return:.2%}')
+print(f'  Sharpe Ratio: {sharpe_ratio:.4f}')
+print(f'  Max Drawdown: {max_drawdown:.2%}')
+print(f'  Win Rate: {win_rate:.2%}')
+print(f'  Final Value: ${final_value:,.0f}')
 
-# 保存CD5结果到JSON文件
+# Save CD5 results to JSON file
 save_cd5_results = True
 if save_cd5_results:
     from datetime import datetime
@@ -106,7 +106,7 @@ if save_cd5_results:
 
     cd5_results = {
         "evaluation_time": datetime.now().isoformat(),
-        "model_name": "CD5指数",
+        "model_name": "CD5 Index",
         "market": "crypto",
         "trading_days": len(dates),
         "start_date": dates[0],
@@ -129,7 +129,7 @@ if save_cd5_results:
         "mean_daily_return": round(mean_return, 6),
         "annualized_return_for_sharpe": round(annualized_return_for_sharpe, 4),
         "risk_free_rate": risk_free_rate,
-        "trading_days_per_year": 365,  # 加密货币365天交易
+        "trading_days_per_year": 365,  # Crypto 365 days trading
         "cd5_composition": {
             "BTC": 74.56,
             "ETH": 15.97,
@@ -137,26 +137,26 @@ if save_cd5_results:
             "SOL": 3.53,
             "ADA": 0.76
         },
-        "notes": "CD5指数基准，使用365天交易计算年化指标"
+        "notes": "CD5 Index benchmark, using 365 trading days for annualized metrics"
     }
 
-    # 保存详细结果
+    # Save detailed results
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(cd5_results, f, indent=2, ensure_ascii=False)
 
-    print(f'\n💾 CD5指标已保存到: {output_file}')
+    print(f'\n💾 CD5 metrics saved to: {output_file}')
 
-    # 同时保存一个固定名称的最新结果文件
+    # Also save a fixed name latest results file
     latest_file = 'CD5_latest_metrics.json'
     with open(latest_file, 'w', encoding='utf-8') as f:
         json.dump(cd5_results, f, indent=2, ensure_ascii=False)
 
-    print(f'💾 最新CD5指标已保存到: {latest_file}')
+    print(f'💾 Latest CD5 metrics saved to: {latest_file}')
 
-    # 生成可用于报告的简化数据
+    # Generate simplified data for report
     report_data = {
-        "model_name": "CD5指数",
-        "status": "✅ 基准",
+        "model_name": "CD5 Index",
+        "status": "✅ Benchmark",
         "trading_days": len(dates),
         "start_date": dates[0],
         "end_date": dates[-1],
@@ -173,11 +173,11 @@ if save_cd5_results:
         "is_benchmark": True
     }
 
-    # 保存简化版本用于模型对比
+    # Save simplified version for model comparison
     report_file = 'CD5_for_comparison.json'
     with open(report_file, 'w', encoding='utf-8') as f:
         json.dump(report_data, f, indent=2, ensure_ascii=False)
 
-    print(f'💾 对比用CD5数据已保存到: {report_file}')
+    print(f'💾 Comparison CD5 data saved to: {report_file}')
 else:
-    print('\n⚠️ CD5结果保存功能已禁用')
+    print('\n⚠️ CD5 result saving disabled')

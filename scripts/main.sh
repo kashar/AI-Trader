@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# AI-Trader 主启动脚本
-# 用于启动完整的交易环境
+# AI-Trader Main Launch Script
+# Used to start the complete trading environment
 
-set -e  # 遇到错误时退出
+set -e  # Exit on error
 
 echo "🚀 Launching AI Trader Environment..."
 

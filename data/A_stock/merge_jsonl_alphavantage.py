@@ -57,9 +57,9 @@ sse_50_codes = [
     "600048.SHH"
 ]
 
-# 读取股票名称映射
+# Read stock name mapping
 def load_stock_name_mapping():
-    """从 sse_50_weight.csv 加载股票代码到名称的映射"""
+    """Load stock code to name mapping from sse_50_weight.csv"""
     current_dir = os.path.dirname(__file__)
     csv_path = os.path.join(current_dir, "A_stock_data", "sse_50_weight.csv")
     
@@ -77,11 +77,11 @@ def load_stock_name_mapping():
     
     return name_mapping
 
-# 加载股票名称映射
+# Load stock name mapping
 stock_name_map = load_stock_name_mapping()
 
 
-# 合并所有以 daily_price 开头的 json，逐文件一行写入 merged.jsonl
+# Merge all jsons starting with daily_price, write one line per file to merged.jsonl
 current_dir = os.path.dirname(__file__)
 pattern = os.path.join(current_dir, "A_stock_data/daily_price*.json")
 files = sorted(glob.glob(pattern))
@@ -95,23 +95,23 @@ skipped_count = 0
 with open(output_file, "w", encoding="utf-8") as fout:
     for fp in files:
         basename = os.path.basename(fp)
-        # 仅当文件名包含任一纳指100成分符号时才写入
+        # Write only if filename contains any SSE 50 component symbol
         if not any(symbol in basename for symbol in sse_50_codes):
             skipped_count += 1
             continue
         with open(fp, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # 统一重命名："1. open" -> "1. buy price"；"4. close" -> "4. sell price"
-        # 对于最新的一天，只保留并写入 "1. buy price"
+        # Unified rename: "1. open" -> "1. buy price"; "4. close" -> "4. sell price"
+        # For the latest date, only keep and write "1. buy price"
         try:
-            # 查找所有以 "Time Series" 开头的键
+            # Find all keys starting with "Time Series"
             series = None
             for key, value in data.items():
                 if key.startswith("Time Series"):
                     series = value
                     break
             if isinstance(series, dict) and series:
-                # 先对所有日期做键名重命名
+                # First rename keys for all dates
                 for d, bar in list(series.items()):
                     if not isinstance(bar, dict):
                         continue
@@ -119,42 +119,42 @@ with open(output_file, "w", encoding="utf-8") as fout:
                         bar["1. buy price"] = bar.pop("1. open")
                     if "4. close" in bar:
                         bar["4. sell price"] = bar.pop("4. close")
-                # 再处理最新日期，仅保留买入价
+                # Then process the latest date, keeping only the buy price
                 latest_date = max(series.keys())
                 latest_bar = series.get(latest_date, {})
                 if isinstance(latest_bar, dict):
                     buy_val = latest_bar.get("1. buy price")
                     series[latest_date] = {"1. buy price": buy_val} if buy_val is not None else {}
-                # 更新 Meta Data 描述
+                # Update Meta Data description
                 meta = data.get("Meta Data", {})
                 if isinstance(meta, dict):
                     meta["1. Information"] = "Daily Prices (buy price, high, low, sell price) and Volumes"
-                    # 如果包含.SHH，替换成.SH
+                    # If contains .SHH, replace with .SH
                     symbol = meta.get("2. Symbol", "")
                     # print("symbol: ", symbol)
                     symbol = symbol.replace(".SHH", ".SH")
                     # print("symbol: ", symbol)
                     meta["2. Symbol"] = symbol
                     
-                    # 添加股票名称 (2.1. Name)
-                    stock_name = stock_name_map.get(symbol, "未知")
+                    # Add stock name (2.1. Name)
+                    stock_name = stock_name_map.get(symbol, "Unknown")
                     if symbol in stock_name_map:
                         meta["2.1. Name"] = stock_name
                     
-                    # 强制修改时区为 Asia/Shanghai
+                    # Force timezone to Asia/Shanghai
                     meta["5. Time Zone"] = "Asia/Shanghai"
                     
                     processed_count += 1
         except Exception as e:
-            # 若结构异常则原样写入
-            print(f"  ⚠️  {basename} - 处理异常: {e}")
+            # Write normally even if structure is abnormal
+            print(f"  ⚠️  {basename} - Process Error: {e}")
             pass
 
         fout.write(json.dumps(data, ensure_ascii=False) + "\n")
 
-print(f"✅ 合并完成!")
-print(f"📊 统计信息:")
-print(f"   - 成功处理: {processed_count} 个文件")
-print(f"   - 跳过文件: {skipped_count} 个文件")
-print(f"   - 输出文件: {output_file}")
+print(f"✅ Merge completed!")
+print(f"📊 Statistics:")
+print(f"   - Successfully processed: {processed_count} files")
+print(f"   - Skipped files: {skipped_count} files")
+print(f"   - Output file: {output_file}")
 

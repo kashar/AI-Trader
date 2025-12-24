@@ -157,7 +157,7 @@ class WebScrapingJinaTool:
 
         try:
             response = requests.get(url, headers=headers)
-            response.raise_for_status()  # 检查HTTP状态码
+            response.raise_for_status()  # Check HTTP status code
 
             json_data = response.json()
 

@@ -29,10 +29,10 @@ def load_crypto_data(crypto_file):
                 continue
             try:
                 doc = json.loads(line)
-                # Extract crypto symbol from Meta Data (适配现有数据格式)
+                # Extract crypto symbol from Meta Data (adapt to existing data format)
                 if 'Meta Data' in doc and '2. Symbol' in doc['Meta Data']:
                     crypto_symbol = doc['Meta Data']['2. Symbol']
-                    # 从symbol中提取币种名称，例如 "BTC-USDT" -> "Bitcoin"
+                    # Extract coin name from symbol, e.g. "BTC-USDT" -> "Bitcoin"
                     crypto_name = {
                         'BTC-USDT': 'Bitcoin',
                         'ETH-USDT': 'Ethereum',
@@ -96,16 +96,16 @@ def calculate_index_values(crypto_data, common_timestamps, percentages, total_va
 
     print("Calculating index values...")
 
-    # 第一步：根据基准日期的价格计算每个加密货币的数量
+    # Step 1: Calculate amount of each cryptocurrency based on base date price
     print(f"  Step 1: Calculating crypto amounts based on base date {base_date}...")
     crypto_amounts = {}
 
-    # 计算每个加密货币的固定数量
+    # Calculate fixed amount for each cryptocurrency
     for crypto_name, percentage in percentages.items():
         weight = percentage / 100.0
         crypto_value = total_value * weight
 
-        # 使用基准日的开盘价买入
+        # Buy using base date open price
         base_price = float(crypto_data[crypto_name]['time_series'][base_date]['1. buy price'])
         crypto_amounts[crypto_name] = crypto_value / base_price
 
@@ -119,14 +119,14 @@ def calculate_index_values(crypto_data, common_timestamps, percentages, total_va
 
     print(f"  Total portfolio value at base date: ${total_units_value:,.2f}")
 
-    # 第二步：从基准日期开始计算每天的指数值
+    # Step 2: Calculate daily index values starting from base date
     print("  Step 2: Calculating daily index values using fixed amounts...")
 
-    # 找到基准日期在时间序列中的位置
+    # Find position of base date in time series
     base_index = common_timestamps.index(base_date)
 
     for i, timestamp in enumerate(common_timestamps):
-        # 只计算基准日期及之后的数据
+        # Only calculate data from base date onwards
         if i < base_index:
             continue
 
@@ -148,26 +148,26 @@ def calculate_index_values(crypto_data, common_timestamps, percentages, total_va
                 # Skip if essential prices are invalid
                 if open_price > 0 and close_price > 0:
                     valid_timestamps += 1
-                    # 使用固定的加密货币数量 × 当天价格
+                    # Use fixed crypto amount * daily price
                     total_open_value += crypto_amount * open_price
                     total_close_value += crypto_amount * close_price
 
         # Only store if we have valid data for at least half the cryptos
         if valid_timestamps >= len(crypto_amounts) / 2 and total_close_value > 0:
-            # 第一天（基准日），开盘价等于组合价值
+            # First day (base date), open price equals portfolio value
             if i == base_index:
                 open_value = total_open_value
             else:
-                # 其他天，开盘价等于前一天的收盘价
+                # Other days, open price equals previous day's close price
                 prev_date = common_timestamps[i-1]
                 open_value = float(index_values[prev_date]["4. close"])
 
             # Store in QQQ format (as strings with 4 decimal places)
-            # High/Low设置为0，因为无法准确计算组合的最高/最低价值
+            # Set High/Low to 0 because impossible to accurately calculate portfolio high/low value
             index_values[timestamp] = {
                 "1. open": f"{open_value:.4f}",
-                "2. high": "0.0000",  # 无法准确计算
-                "3. low": "0.0000",   # 无法准确计算
+                "2. high": "0.0000",  # Unable to calculate accurately
+                "3. low": "0.0000",   # Unable to calculate accurately
                 "4. close": f"{total_close_value:.4f}",
                 "5. volume": "0"      # No volume calculation for index
             }
@@ -202,11 +202,11 @@ def get_cd5_index_config(crypto_data):
     print(f"{'SOL':<10} {'Solana':<10} {cd5_weights['Solana']:>8.2f}")
     print(f"{'ADA':<10} {'Cardano':<10} {cd5_weights['Cardano']:>8.2f}")
 
-    # 获取总价值
-    total_value = 50000.0  # 默认值
+    # Get total value
+    total_value = 50000.0  # Default value
     print(f"\nTotal Index Value: ${total_value:,.0f} USDT")
 
-    # 选择买入日期
+    # Select purchase date
     available_dates = None
     for crypto_name in cd5_weights.keys():
         if crypto_name in crypto_data:
@@ -226,10 +226,10 @@ def get_cd5_index_config(crypto_data):
     sorted_dates = sorted(available_dates)
     print(f"Available date range: {sorted_dates[0]} to {sorted_dates[-1]}")
 
-    # 默认使用第一个可用日期作为买入日期，修改为与agent模拟开始时间一致
-    base_date = "2025-11-02"  # 修改为agent模拟开始时间，与基准保持一致
+    # Default to use first available date as purchase date, modified to align with agent simulation start time
+    base_date = "2025-11-02"  # Modified to agent simulation start time, consistent with benchmark
     if base_date not in available_dates:
-        # 如果指定日期不可用，使用最近的可用日期
+        # If specified date unavailable, use nearest available date
         base_date = sorted_dates[0]
         print(f"Specified date not available, using: {base_date}")
     else:
@@ -250,7 +250,7 @@ def get_cd5_index_config(crypto_data):
         crypto_value = total_value * (weight / 100.0)
         symbol = crypto_data[crypto_name]['symbol']
 
-        # 获取基准日的开盘价
+        # Get base date open price
         buy_price = float(crypto_data[crypto_name]['time_series'][base_date]['1. buy price'])
         crypto_amount = crypto_value / buy_price
 
